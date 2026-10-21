@@ -357,3 +357,8 @@ function route() {
 }
 
 route();
+
+// Navigating to the same path with a different fragment does not reload the
+// page, so a recipient who pastes the full link while already sitting on the
+// bare one would otherwise never see the key arrive. Re-route on hash change.
+window.addEventListener('hashchange', route);

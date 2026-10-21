@@ -108,6 +108,31 @@ docker build -t cinder .
 docker run -p 3000:3000 cinder
 ```
 
+### Deploy to Netlify
+
+Live instance: **<https://guileless-empanada-7a964a.netlify.app>**
+
+Netlify runs the same app in two pieces:
+
+* `public/` is served as static files.
+* `netlify/functions/api.mjs` is the API, with records in **Netlify Blobs** so
+  secrets survive between invocations and across regions.
+
+`_redirects` maps `/api/*` onto the function and `/s/*` onto the app shell.
+
+To deploy your own:
+
+```bash
+npm i -g netlify-cli
+netlify deploy --prod
+```
+
+Or drag the repo folder onto <https://app.netlify.com/drop>.
+
+The only behavioural difference from the Node server is the rate limiter:
+Blobs is not a counter, so it uses a coarse per-minute marker rather than an
+exact sliding window. Same limits, less precision.
+
 ---
 
 ## Architecture
@@ -117,6 +142,8 @@ src/
   server.js      HTTP layer: routing, validation, headers, rate limiting
   store.js       in-memory record store, single-use reads, scrypt hashing
   rateLimit.js   sliding-window limiter
+netlify/
+  functions/api.mjs  same API on Netlify Functions + Blobs
 public/
   index.html     app shell
   app.js         UI + router
@@ -126,6 +153,7 @@ test/
   crypto.test.js  round trips, tampering, key handling
   store.test.js   expiry, single-use, passphrase, capacity
   server.test.js  HTTP contract, headers, rate limits, traversal
+  e2e.test.js     encrypt → store → reveal → decrypt, with real crypto
 ```
 
 `public/crypto.js` is imported by both the browser and the Node test suite. The
