@@ -2,6 +2,8 @@
 
 **Share a secret once. Then it's gone.**
 
+### ▶ [Try it live → guileless-empanada-7a964a.netlify.app](https://guileless-empanada-7a964a.netlify.app)
+
 Cinder is a zero-knowledge one-time secret sharer. You paste a password, an API
 key, a private note — it gets encrypted in your browser, and you get a link that
 works exactly once. The server never sees the plaintext, never sees the key, and
