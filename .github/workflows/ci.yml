@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['18', '20', '22']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Verify there are no dependencies to install
+        run: |
+          node -e "const p=require('./package.json'); const d=Object.keys(p.dependencies||{}); if(d.length){console.error('unexpected deps:',d);process.exit(1)}"
+
+      - name: Run tests
+        run: npm test
+
+  smoke:
+    name: boot the server and hit it
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Start server
+        run: |
+          PORT=3111 node src/server.js &
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3111/api/health > /dev/null; then break; fi
+            sleep 0.5
+          done
+
+      - name: Health check
+        run: |
+          set -e
+          body=$(curl -sf http://127.0.0.1:3111/api/health)
+          echo "$body"
+          echo "$body" | grep -q '"status":"ok"'
+
+      - name: Create and reveal a secret end to end
+        run: |
+          set -e
+          created=$(curl -sf -X POST http://127.0.0.1:3111/api/secrets \
+            -H 'Content-Type: application/json' \
+            -d '{"ciphertext":"c21va2UtdGVzdA"}')
+          echo "$created"
+          id=$(echo "$created" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).id))")
+
+          first=$(curl -sf -X POST "http://127.0.0.1:3111/api/secrets/$id/reveal" -H 'Content-Type: application/json' -d '{}')
+          echo "$first"
+          echo "$first" | grep -q 'c21va2UtdGVzdA'
+
+          # Second read must fail: single use is the entire product.
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:3111/api/secrets/$id/reveal" -H 'Content-Type: application/json' -d '{}')
+          echo "second read: $code"
+          test "$code" = "404"
+
+      - name: Security headers present
+        run: |
+          set -e
+          headers=$(curl -sI http://127.0.0.1:3111/)
+          echo "$headers"
+          echo "$headers" | grep -qi "content-security-policy"
+          echo "$headers" | grep -qi "x-content-type-options: nosniff"

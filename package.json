@@ -1,0 +1,25 @@
+{
+  "name": "cinder",
+  "version": "1.0.0",
+  "description": "Zero-knowledge one-time secret sharing. The server never sees your plaintext.",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test test/",
+    "test:coverage": "node --test --experimental-test-coverage test/"
+  },
+  "keywords": [
+    "secrets",
+    "zero-knowledge",
+    "encryption",
+    "one-time",
+    "security"
+  ],
+  "license": "MIT",
+  "dependencies": {}
+}
