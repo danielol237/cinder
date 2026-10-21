@@ -114,6 +114,10 @@ docker run -p 3000:3000 cinder
 
 Live instance: **<https://guileless-empanada-7a964a.netlify.app>**
 
+The demo runs on Netlify's free tier and has no expiry of its own. It stays up
+as long as the account behind it stays active — and because the whole thing is
+in this repo, redeploying it anywhere is a one-minute job.
+
 Netlify runs the same app in two pieces:
 
 * `public/` is served as static files.
